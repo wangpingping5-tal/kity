@@ -97,6 +97,7 @@ define(function(require, exports, module) {
 
     // 执行绑定, 该方法context为shape或者mixin了eventhandler的对象
     function listen(node, type, handler, isOnce) {
+        var isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0;
 
         var eid = this._EVNET_UID,
             targetObject = this;
@@ -152,7 +153,7 @@ define(function(require, exports, module) {
 
             // 绑定对应类型的事件
             // dom对象利用dom event进行处理， 非dom对象， 由消息分发机制处理
-            if (!!node && ('on' + type) in node) {
+            if (!!node && (('on' + type) in node || isTouchDevice)) {
                 bindDomEvent(node, type, INNER_HANDLER_CACHE[eid][type]);
 
             }

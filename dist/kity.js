@@ -1,9 +1,9 @@
 /*!
  * ====================================================
- * kity - v2.0.4 - 2016-08-22
+ * kity - v2.0.4 - 2023-07-24
  * https://github.com/fex-team/kity
  * GitHub: https://github.com/fex-team/kity.git 
- * Copyright (c) 2016 Baidu FEX; Licensed BSD
+ * Copyright (c) 2023 Baidu FEX; Licensed BSD
  * ====================================================
  */
 
@@ -1607,6 +1607,11 @@ _p[11] = {
      *         return this.base('toString') + ',' + this.toString();
      *     }
      * })
+     *
+     * var bob = new Male();
+     *
+     * console.log(bob.speak()); // I am a person, I am a man
+     *
      * ```
      */
         Class.prototype.base = function(name) {
@@ -1644,6 +1649,7 @@ _p[11] = {
      * });
      *
      * var dog = new Dog('Dummy');
+     *
      * console.log(dog.toString()); // "I am an animal name Dummy, a dog";
      * ```
      */
@@ -1652,6 +1658,38 @@ _p[11] = {
             var method = caller.__KityMethodClass.__KityBaseClass.prototype[caller.__KityMethodName];
             return method.apply(this, arguments);
         };
+        /**
+     * @method mixin()
+     * @for kity.Class
+     * @protected
+     * @grammar mixin(name, args...) => {any}
+     * @description 调用 mixins 中指定名称的函数
+     * @param {string} name 函数的名称
+     * @param {parameter} args... 传递给 mixins 中的函数的参数
+     *
+     * @example
+     *
+     * ```js
+     * var Work = kity.createClass('Work', {
+     *     showTitle: function () {
+     *         return 'Frontend Engineer';
+     *     }
+     * });
+     *
+     * var Person = kity.createClass('Person', {
+     *     mixins: [Work],
+     *
+     *     toString: function() {
+     *         return 'I am a person, my work title is : ' + this.mixin('showTitle');
+     *     }
+     * });
+     *
+     * var fe = new Person();
+     *
+     * console.log(fe.toString()); // I am a person, my work title is Frontend Engineer
+     *
+     * ```
+     */
         Class.prototype.mixin = function(name) {
             var caller = arguments.callee.caller;
             var mixins = caller.__KityMethodClass.__KityMixins;
@@ -1661,6 +1699,40 @@ _p[11] = {
             var method = mixins[name];
             return method.apply(this, Array.prototype.slice.call(arguments, 1));
         };
+        /**
+     * @method callMixin()
+     * @for kity.Class
+     * @protected
+     * @grammar callMixin(args...) => {any}
+     * @description 调用 mixins 中同名函数
+     * @param {parameter} args... 传递到 mixins 同名函数的参数
+     *
+     * @example
+     *
+     * ```js
+     * var Skill = kity.createClass('Skill', {
+     *     toString: function () {
+     *         return 'I can speak';
+     *     }
+     * });
+     *
+     * var Dog = kity.createClass('Dog', {
+     *     mixins: [Skill],
+     *
+     *     constructor: function (name) {
+     *        this.name = name;
+     *     }
+     *
+     *     toString: function() {
+     *         return 'I am ' + this.name + ', ' + this.callMixin();
+     *     }
+     * });
+     *
+     * var dog = new Dog('Snoppy');
+     *
+     * console.log(dog.toString()); // "I am Snoppy, I can speak";
+     * ```
+     */
         Class.prototype.callMixin = function() {
             var caller = arguments.callee.caller;
             var methodName = caller.__KityMethodName;
@@ -1682,7 +1754,7 @@ _p[11] = {
      * @method pipe()
      * @for kity.Class
      * @grammar pipe() => {this}
-     * @description 以当前对象为上线文以及管道函数的第一个参数，执行一个管道函数
+     * @description 以当前对象为上下文以及管道函数的第一个参数，执行一个管道函数
      * @param  {Function} fn 进行管道操作的函数
      *
      * @example
@@ -1834,6 +1906,7 @@ _p[11] = {
      *     constructor: function(name, color) {
      *         // 调用父类构造函数
      *         this.callBase(name);
+     *         this.color = color;
      *     },
      *     toString: function() {
      *         return 'A ' + this.color + ' cat, ' + this.callBase();
@@ -1860,13 +1933,12 @@ _p[11] = {
      *     mixins: [Walkable],
      *     constructor: function(name) {
      *         this.callBase(name);
-     *         this.callMixins();
+     *         this.callMixin();
      *     }
      * });
      *
-     * var dog = new Dog('doggy');
-     * console.log(dog.toString() + ' say:');
-     * dog.walk();
+     * var dog = new Dog('snoppy');
+     * console.log(dog.toString() + ' say: ' + dog.walk()); // snoppy say: I am walking fast
      * ```
      */
         exports.createClass = function(classname, defines) {
@@ -4535,6 +4607,7 @@ _p[34] = {
         }
         // 执行绑定, 该方法context为shape或者mixin了eventhandler的对象
         function listen(node, type, handler, isOnce) {
+            var isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0;
             var eid = this._EVNET_UID, targetObject = this;
             // 初始化内部监听器
             if (!INNER_HANDLER_CACHE[eid]) {
@@ -4566,7 +4639,7 @@ _p[34] = {
                 USER_HANDLER_CACHE[eid][type] = [ handler ];
                 // 绑定对应类型的事件
                 // dom对象利用dom event进行处理， 非dom对象， 由消息分发机制处理
-                if (!!node && "on" + type in node) {
+                if (!!node && ("on" + type in node || isTouchDevice)) {
                     bindDomEvent(node, type, INNER_HANDLER_CACHE[eid][type]);
                 }
             } else {
